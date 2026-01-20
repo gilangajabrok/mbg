@@ -51,12 +51,18 @@ class ApiClient {
       },
     })
 
-    // Add request interceptor for auth token
+    // Add request interceptor for auth token and role headers
     this.client.interceptors.request.use((config) => {
       const token = this.getToken()
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
+      
+      // Add role headers for development (no auth)
+      // Default to admin role for now
+      config.headers["X-User-Role"] = "admin"
+      config.headers["X-User-ID"] = "1"
+      
       return config
     })
 
@@ -494,5 +500,85 @@ class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient()
+
+// User API namespace for easier imports
+export const userApi = {
+  getProfile: () => apiClient.getProfile(),
+  updateProfile: (data: ProfileUpdateRequest) => apiClient.updateProfile(data),
+  getProfileById: (userId: string) => apiClient.getProfileById(userId),
+  deactivateUser: (userId: string) => apiClient.deactivateUser(userId),
+  changePassword: (data: ChangePasswordRequest) => apiClient.changePassword(data),
+}
+
+// School API namespace
+export const schoolApi = {
+  listSchools: (limit?: number, offset?: number) => apiClient.listSchools(limit, offset),
+  getSchool: (id: string) => apiClient.getSchool(id),
+  createSchool: (data: CreateSchoolRequest) => apiClient.createSchool(data),
+  updateSchool: (id: string, data: UpdateSchoolRequest) => apiClient.updateSchool(id, data),
+  deleteSchool: (id: string) => apiClient.deleteSchool(id),
+}
+
+// Student API namespace
+export const studentApi = {
+  listStudents: (limit?: number, offset?: number) => apiClient.listStudents(limit, offset),
+  getStudentsBySchool: (schoolId: string, limit?: number, offset?: number) => apiClient.getStudentsBySchool(schoolId, limit, offset),
+  getStudentsByParent: (parentId: string, limit?: number, offset?: number) => apiClient.getStudentsByParent(parentId, limit, offset),
+  getStudent: (id: string) => apiClient.getStudent(id),
+  createStudent: (data: CreateStudentRequest) => apiClient.createStudent(data),
+  updateStudent: (id: string, data: UpdateStudentRequest) => apiClient.updateStudent(id, data),
+  deleteStudent: (id: string) => apiClient.deleteStudent(id),
+}
+
+// Meal API namespace
+export const mealApi = {
+  listMeals: (limit?: number, offset?: number) => apiClient.listMeals(limit, offset),
+  getMealsBySchool: (schoolId: string, limit?: number, offset?: number) => apiClient.getMealsBySchool(schoolId, limit, offset),
+  getMeal: (id: string) => apiClient.getMeal(id),
+  createMeal: (data: CreateMealRequest) => apiClient.createMeal(data),
+  updateMeal: (id: string, data: UpdateMealRequest) => apiClient.updateMeal(id, data),
+  deleteMeal: (id: string) => apiClient.deleteMeal(id),
+}
+
+// MealPlan API namespace
+export const mealPlanApi = {
+  listMealPlans: (limit?: number, offset?: number) => apiClient.listMealPlans(limit, offset),
+  getMealPlansByStudent: (studentId: string, limit?: number, offset?: number) => apiClient.getMealPlansByStudent(studentId, limit, offset),
+  getMealPlan: (id: string) => apiClient.getMealPlan(id),
+  createMealPlan: (data: CreateMealPlanRequest) => apiClient.createMealPlan(data),
+  updateMealPlan: (id: string, data: UpdateMealPlanRequest) => apiClient.updateMealPlan(id, data),
+  deleteMealPlan: (id: string) => apiClient.deleteMealPlan(id),
+}
+
+// Order API namespace
+export const orderApi = {
+  listOrders: (limit?: number, offset?: number) => apiClient.listOrders(limit, offset),
+  getOrdersBySupplier: (supplierId: string, limit?: number, offset?: number) => apiClient.getOrdersBySupplier(supplierId, limit, offset),
+  getOrdersBySchool: (schoolId: string, limit?: number, offset?: number) => apiClient.getOrdersBySchool(schoolId, limit, offset),
+  getOrder: (id: string) => apiClient.getOrder(id),
+  createOrder: (data: CreateOrderRequest) => apiClient.createOrder(data),
+  updateOrder: (id: string, data: UpdateOrderRequest) => apiClient.updateOrder(id, data),
+  updateOrderStatus: (id: string, data: UpdateOrderStatusRequest) => apiClient.updateOrderStatus(id, data),
+  deleteOrder: (id: string) => apiClient.deleteOrder(id),
+}
+
+// Supplier API namespace
+export const supplierApi = {
+  listSuppliers: (limit?: number, offset?: number) => apiClient.listSuppliers(limit, offset),
+  getSupplier: (id: string) => apiClient.getSupplier(id),
+  createSupplier: (data: CreateSupplierRequest) => apiClient.createSupplier(data),
+  updateSupplier: (id: string, data: UpdateSupplierRequest) => apiClient.updateSupplier(id, data),
+  deleteSupplier: (id: string) => apiClient.deleteSupplier(id),
+}
+
+// Announcement API namespace
+export const announcementApi = {
+  listAnnouncements: (limit?: number, offset?: number) => apiClient.listAnnouncements(limit, offset),
+  getAnnouncementsBySchool: (schoolId: string, limit?: number, offset?: number) => apiClient.getAnnouncementsBySchool(schoolId, limit, offset),
+  getAnnouncement: (id: string) => apiClient.getAnnouncement(id),
+  createAnnouncement: (data: CreateAnnouncementRequest) => apiClient.createAnnouncement(data),
+  updateAnnouncement: (id: string, data: UpdateAnnouncementRequest) => apiClient.updateAnnouncement(id, data),
+  deleteAnnouncement: (id: string) => apiClient.deleteAnnouncement(id),
+}
 
 export default ApiClient

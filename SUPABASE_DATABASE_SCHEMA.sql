@@ -49,7 +49,41 @@ CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
 CREATE INDEX idx_user_profiles_is_active ON user_profiles(is_active);
 
 -- ============================================
--- 3. SCHOOLS TABLE
+-- 3. ROLES TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default roles
+INSERT INTO roles (name, description) VALUES
+    ('super_admin', 'Super Administrator - Full system access'),
+    ('admin', 'School Administrator - Manage schools, students, meals'),
+    ('supplier', 'Supplier - Manage own orders and profile'),
+    ('parent', 'Parent - Manage own children and meal plans')
+ON CONFLICT (name) DO NOTHING;
+
+-- ============================================
+-- 4. USER ROLES TABLE (Junction Table)
+-- ============================================
+CREATE TABLE IF NOT EXISTS user_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    role_name VARCHAR(50) NOT NULL REFERENCES roles(name) ON DELETE CASCADE,
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    assigned_by UUID REFERENCES auth.users(id),
+    UNIQUE(user_id, role_name)
+);
+
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX idx_user_roles_role_name ON user_roles(role_name);
+
+-- ============================================
+-- 5. SCHOOLS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS schools (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -69,7 +103,7 @@ CREATE INDEX idx_schools_created_at ON schools(created_at) WHERE deleted_at IS N
 CREATE INDEX idx_schools_deleted_at ON schools(deleted_at);
 
 -- ============================================
--- 4. MEALS TABLE
+-- 6. MEALS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS meals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -90,7 +124,7 @@ CREATE INDEX idx_meals_school_id ON meals(school_id);
 CREATE INDEX idx_meals_created_at ON meals(created_at);
 
 -- ============================================
--- 5. MEAL PLANS TABLE
+-- 7. MEAL PLANS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS meal_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

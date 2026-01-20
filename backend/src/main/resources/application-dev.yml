@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    show-sql: true
+  devtools:
+    restart:
+      enabled: true
+
+logging:
+  level:
+    com.mbg: DEBUG

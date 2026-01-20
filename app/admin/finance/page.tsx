@@ -1,293 +1,161 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { DollarSign, TrendingUp, TrendingDown, FileText, Download, Filter } from "lucide-react"
-import { adminFinancialRecords, adminDashboardStats } from "@/lib/data/admin-dummy-data"
-import { useSound } from "@/lib/sound-provider"
+import { useState, useEffect } from "react"
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useToast } from "@/components/ui/use-toast"
+import { financialApi, FinancialRecord, FinancialSummary } from "@/lib/api/financialApi"
+import { useTenant } from "@/components/providers/tenant-provider"
 
-const monthlyData = [
-  { month: "Jan", revenue: 750000000, expenses: 623400000 },
-  { month: "Feb", revenue: 820000000, expenses: 680000000 },
-  { month: "Mar", revenue: 850000000, expenses: 710000000 },
-  { month: "Apr", revenue: 880000000, expenses: 735000000 },
-]
+export default function FinancePage() {
+  const [records, setRecords] = useState<FinancialRecord[]>([])
+  const [summary, setSummary] = useState<FinancialSummary>({ income: 0, expense: 0, balance: 0 })
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+  const { organizationId } = useTenant()
 
-export default function AdminFinancePage() {
-  const { playSound } = useSound()
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  useEffect(() => {
+    fetchData()
+  }, [organizationId])
 
-  const filteredRecords =
-    selectedCategory === "all"
-      ? adminFinancialRecords
-      : adminFinancialRecords.filter((r) => r.category === selectedCategory)
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      "meal-cost": "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
-      "delivery-fee": "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400",
-      "supplier-payment": "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400",
-      operational: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400",
-    }
-    return colors[category] || "bg-gray-100 text-gray-700"
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400"
-      case "pending":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400"
-      case "overdue":
-        return "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
-      default:
-        return "bg-gray-100 text-gray-700"
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [recordsData, summaryData] = await Promise.all([
+        financialApi.getAll(),
+        financialApi.getSummary()
+      ])
+      setRecords(recordsData.content || [])
+      setSummary(summaryData)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch financial data",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
   }
-
-  const totalExpenses = adminFinancialRecords.reduce((sum, r) => sum + r.amount, 0)
-  const paidAmount = adminFinancialRecords.filter((r) => r.status === "paid").reduce((sum, r) => sum + r.amount, 0)
-  const pendingAmount = adminFinancialRecords
-    .filter((r) => r.status === "pending")
-    .reduce((sum, r) => sum + r.amount, 0)
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Financial Overview</h1>
-            <p className="text-muted-foreground mt-1">Monitor budget, expenses, and payments</p>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => playSound("click")}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          >
-            <Download className="w-5 h-5" />
-            Export Report
-          </motion.button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Financial Management</h1>
+          <p className="text-muted-foreground mt-1">Track income and expenses</p>
         </div>
+        <Button className="gap-2">
+          <Plus className="w-4 h-4" /> New Transaction
+        </Button>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
-            {
-              label: "Monthly Budget",
-              value: `Rp ${(adminDashboardStats.monthlyBudget / 1000000).toFixed(0)}M`,
-              icon: DollarSign,
-              color: "from-blue-500 to-blue-600",
-              change: null,
-            },
-            {
-              label: "Total Spent",
-              value: `Rp ${(adminDashboardStats.spentThisMonth / 1000000).toFixed(0)}M`,
-              icon: TrendingDown,
-              color: "from-red-500 to-red-600",
-              change: "-73%",
-            },
-            {
-              label: "Paid",
-              value: `Rp ${(paidAmount / 1000000).toFixed(0)}M`,
-              icon: TrendingUp,
-              color: "from-green-500 to-green-600",
-              change: null,
-            },
-            {
-              label: "Pending",
-              value: `Rp ${(pendingAmount / 1000000).toFixed(0)}M`,
-              icon: FileText,
-              color: "from-yellow-500 to-yellow-600",
-              change: null,
-            },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                  <h3 className="text-2xl font-bold text-foreground">{stat.value}</h3>
-                  {stat.change && <p className="text-xs text-muted-foreground mt-1">Budget used</p>}
-                </div>
-                <div
-                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}
-                >
-                  <stat.icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Monthly Trend</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "12px",
-                    padding: "12px",
-                  }}
-                  formatter={(value: number) => `Rp ${(value / 1000000).toFixed(0)}M`}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
-                <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6"
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Expense Breakdown</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart
-                data={[
-                  { category: "Meals", amount: 450 },
-                  { category: "Delivery", amount: 120 },
-                  { category: "Operations", amount: 80 },
-                  { category: "Other", amount: 40 },
-                ]}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-                <XAxis dataKey="category" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "12px",
-                    padding: "12px",
-                  }}
-                  formatter={(value: number) => `Rp ${value}M`}
-                />
-                <Bar dataKey="amount" fill="#6366f1" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
-
-        {/* Filter */}
-        <div className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-4">
-          <div className="flex items-center gap-3">
-            <Filter className="w-5 h-5 text-muted-foreground" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                playSound("click")
-                setSelectedCategory(e.target.value)
-              }}
-              className="px-4 py-2 rounded-lg bg-muted/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            >
-              <option value="all">All Categories</option>
-              <option value="meal-cost">Meal Cost</option>
-              <option value="delivery-fee">Delivery Fee</option>
-              <option value="supplier-payment">Supplier Payment</option>
-              <option value="operational">Operational</option>
-            </select>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 dark:from-green-950/30 dark:to-emerald-950/30 dark:border-green-900/50">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-100 rounded-xl text-green-600 dark:bg-green-900/50 dark:text-green-400">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Income</p>
+              <h3 className="text-2xl font-bold text-green-700 dark:text-green-400">
+                IDR {summary.income?.toLocaleString()}
+              </h3>
+            </div>
           </div>
         </div>
-
-        {/* Financial Records Table */}
-        <div className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50 border-b border-border/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Invoice
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {filteredRecords.map((record, index) => (
-                  <motion.tr
-                    key={record.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-foreground">{record.invoiceNumber}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-foreground">{record.date}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(record.category)}`}
-                      >
-                        {record.category.replace("-", " ")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-foreground max-w-xs truncate">{record.description}</p>
-                      {record.supplier && <p className="text-xs text-muted-foreground">{record.supplier}</p>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-foreground">Rp {(record.amount / 1000000).toFixed(1)}M</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(record.status)}`}>
-                        {record.status}
-                      </span>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 border border-red-100 dark:from-red-950/30 dark:to-rose-950/30 dark:border-red-900/50">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-100 rounded-xl text-red-600 dark:bg-red-900/50 dark:text-red-400">
+              <TrendingDown className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Expense</p>
+              <h3 className="text-2xl font-bold text-red-700 dark:text-red-400">
+                IDR {summary.expense?.toLocaleString()}
+              </h3>
+            </div>
           </div>
         </div>
-      </motion.div>
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 dark:from-blue-950/30 dark:to-indigo-950/30 dark:border-blue-900/50">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-xl text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Current Balance</p>
+              <h3 className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                IDR {summary.balance?.toLocaleString()}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
+        <div className="rounded-xl border border-border/50 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    Loading records...
+                  </TableCell>
+                </TableRow>
+              ) : records.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    No records found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                records.map((record) => (
+                  <TableRow key={record.id} className="hover:bg-muted/30">
+                    <TableCell>
+                      {record.type === 'INCOME' ? (
+                        <span className="flex items-center gap-1 text-green-600 text-xs font-medium bg-green-100 px-2 py-1 rounded-full w-fit">
+                          <ArrowUpRight className="w-3 h-3" /> Income
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-red-600 text-xs font-medium bg-red-100 px-2 py-1 rounded-full w-fit">
+                          <ArrowDownRight className="w-3 h-3" /> Expense
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>{record.category}</TableCell>
+                    <TableCell className="text-muted-foreground">{record.description}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {record.transactionDate ? new Date(record.transactionDate).toLocaleDateString() : '-'}
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${record.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                      {record.type === 'INCOME' ? '+' : '-'} IDR {record.amount.toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
   )
 }

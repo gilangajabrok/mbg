@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Search, Bell, Globe, Sun, Moon, User, Settings, HelpCircle, LogOut, ChevronDown } from "lucide-react"
 import { useSound } from "@/lib/sound-provider"
 import { useTheme } from "next-themes"
+import { TenantSwitcher } from "@/components/layout/tenant-switcher"
 
 export default function AdminTopbar() {
   const { playSound } = useSound()
@@ -40,6 +41,9 @@ export default function AdminTopbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Tenant Switcher */}
+          <TenantSwitcher />
+
           {/* Language Toggle */}
           <motion.button
             whileHover={{ scale: 1.05 }}

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Server,
 } from "lucide-react"
 import { useSound } from "@/hooks/use-sound"
 
@@ -34,9 +35,14 @@ const menuItems = [
     href: "/great/dashboard/users",
   },
   {
-    title: "Database & System",
+    title: "Database Management",
     icon: Database,
     href: "/great/dashboard/database",
+  },
+  {
+    title: "System Monitoring",
+    icon: Server,
+    href: "/great/dashboard/system",
   },
   {
     title: "Reports & Analytics",

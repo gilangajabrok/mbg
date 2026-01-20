@@ -4,146 +4,64 @@
 
 Your MBG project now has a **hybrid architecture**:
 - **Frontend:** Next.js 16 + React 19 + TypeScript (in `/app`)
-- **Backend:** Golang + Gin + PostgreSQL (in `/backend`)
+- **Backend:** Java (in `/backend`) - 🚧 **In Development**
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended - Easiest)
+### Frontend Setup
 
 \`\`\`bash
-cd backend
-docker-compose up -d
-
-# Wait for services to start
-sleep 5
-
-# Test the API
-curl http://localhost:8000/health
-# Response: {"status":"ok"}
-\`\`\`
-
-**Services running:**
-- API: `http://localhost:8000/api/v1`
-- PostgreSQL: `localhost:5432`
-- Frontend: `http://localhost:3000` (run from root: `npm run dev`)
-
-### Option 2: Manual Setup (Local Development)
-
-#### 1. Start PostgreSQL
-
-\`\`\`powershell
-# Option A: Docker
-docker run --name mbg-postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
-
-# Option B: Install PostgreSQL locally and ensure it's running
-\`\`\`
-
-#### 2. Setup Backend
-
-\`\`\`powershell
-cd backend
-
-# Copy environment file
-cp .env.example .env
-
-# Install dependencies
-go mod download
-go mod tidy
-
-# Run development server
-go run cmd/api/main.go
-# Server runs on http://localhost:8000
-\`\`\`
-
-#### 3. Setup Frontend
-
-\`\`\`powershell
-cd ..  # Back to root
-
 # Install dependencies
 npm install
 
-# Start dev server
+# Start development server
 npm run dev
 # App runs on http://localhost:3000
 \`\`\`
 
+### Backend Setup
+
+🚧 **Java backend is currently in development**
+
+Backend akan dikonfigurasi setelah menerima modul tambahan dari user.
+
 ## 📁 Project Structure
 
 \`\`\`
-Dev/
+mbg/
 ├── app/                    # Next.js Frontend (React)
 ├── components/             # React Components
 ├── lib/                    # Frontend Utilities
-├── backend/                # Golang Backend
-│   ├── cmd/api/           # Entry Point
-│   ├── internal/          # Core Logic
-│   │   ├── handlers/      # HTTP Handlers
-│   │   ├── models/        # Database Models
-│   │   ├── middleware/    # Auth, CORS, Logging
-│   │   └── database/      # DB Connection
-│   ├── .env.example       # Env Template
-│   ├── go.mod             # Go Dependencies
-│   ├── Dockerfile         # Docker Config
-│   ├── docker-compose.yml # Docker Compose
-│   ├── Makefile           # Build Commands
-│   └── README.md          # Backend Docs
-└── .github/               # GitHub Configs
-\`\`\`
-
-## 🔑 Key Endpoints
-
-### Authentication
-\`\`\`bash
-POST   /api/v1/auth/register
-POST   /api/v1/auth/login
-POST   /api/v1/auth/refresh
-POST   /api/v1/auth/logout
-\`\`\`
-
-### Resources (all with `/api/v1` prefix)
-\`\`\`
-GET/POST   /users
-GET/POST   /schools
-GET/POST   /meals
-GET/POST   /suppliers
-GET/POST   /orders
-GET/POST   /students
-GET/POST   /announcements
+├── hooks/                  # Custom React Hooks
+├── backend/                # Java Backend (In Development)
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/mbg/
+│   │   │   └── resources/
+│   │   └── test/java/
+│   └── README.md
+└── public/                 # Static Assets
 \`\`\`
 
 ## 🛠️ Development Commands
 
-### Backend (from `/backend` directory)
+### Frontend
 
-\`\`\`powershell
-# Development
-go run cmd/api/main.go
-
-# Build
-go build -o mbg-api cmd/api/main.go
-
-# With Makefile (if you have make installed)
-make dev
-make build
-make docker-up
-\`\`\`
-
-### Frontend (from root directory)
-
-\`\`\`powershell
+\`\`\`bash
 npm run dev      # Development server
 npm run build    # Production build
 npm run start    # Run production build
 npm run lint     # ESLint check
 \`\`\`
 
+### Backend
+
+🚧 Backend commands akan ditambahkan setelah setup Java selesai.
+
 ## 📚 Documentation
 
-- **Frontend:** See `.github/copilot-instructions.md`
+- **Frontend:** See `README.md` and various guides in root
 - **Backend:** See `backend/README.md`
-- **Architecture:** See `backend/GOLANG_ARCHITECTURE.md`
-- **API Reference:** See `backend/README.md` (API Endpoints section)
 
 ## 🧪 Test the API
 
@@ -247,12 +165,11 @@ createdb mbg
 | | TypeScript | Type safety |
 | | Tailwind CSS v4 | Styling |
 | | Framer Motion | Animations |
-| **Backend** | Golang 1.21 | Core language |
-| | Gin Gonic | Web framework |
-| | PostgreSQL 15 | Database |
-| | GORM | ORM |
+| **Backend** | Java | Core language (In Development) |
+| | TBD | Framework (awaiting modules) |
+| | TBD | Database |
+| | TBD | ORM |
 | | JWT | Authentication |
-| | bcrypt | Password hashing |
 
 ## 🎯 Next Steps
 

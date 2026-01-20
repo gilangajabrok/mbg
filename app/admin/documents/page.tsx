@@ -1,158 +1,180 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { FileText, Upload, Search, Download, Eye, Trash2, Filter } from "lucide-react"
-import { useSound } from "@/lib/sound-provider"
+import { useState, useEffect } from "react"
+import { Search, FileText, CheckCircle, XCircle, Clock, Check, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import { useToast } from "@/components/ui/use-toast"
+import { documentApi, Document } from "@/lib/api/documentApi"
 
-const documents = [
-  {
-    id: "DOC001",
-    name: "School Registration Form - SDN Menteng 01",
-    category: "registration",
-    date: "2025-01-15",
-    size: "1.2 MB",
-  },
-  {
-    id: "DOC002",
-    name: "Supplier Contract - Berkah Catering",
-    category: "contract",
-    date: "2025-01-14",
-    size: "2.8 MB",
-  },
-  { id: "DOC003", name: "Quality Inspection Certificate", category: "certificate", date: "2025-01-13", size: "856 KB" },
-  { id: "DOC004", name: "Monthly Budget Report - January", category: "financial", date: "2025-01-12", size: "3.4 MB" },
-  { id: "DOC005", name: "Parent Consent Forms - Batch 1", category: "consent", date: "2025-01-11", size: "4.2 MB" },
-]
+export default function DocumentsPage() {
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("all")
+  const { toast } = useToast()
 
-export default function AdminDocumentsPage() {
-  const { playSound } = useSound()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  useEffect(() => {
+    fetchDocuments()
+  }, [activeTab])
 
-  const filteredDocuments = documents.filter((doc) => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || doc.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true)
+      let response;
+      if (activeTab === "pending") {
+        response = await documentApi.getPending()
+      } else {
+        response = await documentApi.getAll()
+      }
+      // Unwrap ApiResponse: { success: true, message: ..., data: Page }
+      setDocuments(response.data.content || [])
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch documents",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApprove = async (id: string) => {
+    try {
+      await documentApi.approve(id)
+      toast({ title: "Approved", description: "Document approved successfully" })
+      fetchDocuments()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to approve document", variant: "destructive" })
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    // For simplicity, hardcoded reason. In real app use dialog.
+    try {
+      await documentApi.reject(id, "Rejected by Admin")
+      toast({ title: "Rejected", description: "Document rejected successfully" })
+      fetchDocuments()
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to reject document", variant: "destructive" })
+    }
+  }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Documents</h1>
-            <p className="text-muted-foreground mt-1">Manage system documents and files</p>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => playSound("click")}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          >
-            <Upload className="w-5 h-5" />
-            Upload Document
-          </motion.button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Document Approval</h1>
+          <p className="text-muted-foreground mt-1">Review and approve submitted documents</p>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search documents..."
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                onFocus={() => playSound("hover")}
-              />
-            </div>
-
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  playSound("click")
-                  setSelectedCategory(e.target.value)
-                }}
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-muted/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none"
-              >
-                <option value="all">All Categories</option>
-                <option value="registration">Registration</option>
-                <option value="contract">Contracts</option>
-                <option value="certificate">Certificates</option>
-                <option value="financial">Financial</option>
-                <option value="consent">Consent Forms</option>
-              </select>
+      <div className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6">
+        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+          <div className="flex items-center justify-between mb-6">
+            <TabsList>
+              <TabsTrigger value="all">All Documents</TabsTrigger>
+              <TabsTrigger value="pending">Pending Approval</TabsTrigger>
+            </TabsList>
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search documents..." className="pl-8" />
             </div>
           </div>
-        </div>
 
-        {/* Documents List */}
-        <div className="space-y-3">
-          {filteredDocuments.map((doc, index) => (
-            <motion.div
-              key={doc.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-background/80 backdrop-blur-xl rounded-2xl border border-border/50 p-6 hover:shadow-xl transition-all"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{doc.name}</h3>
-                    <div className="flex items-center gap-4 mt-1">
-                      <p className="text-sm text-muted-foreground">{doc.date}</p>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <p className="text-sm text-muted-foreground">{doc.size}</p>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 font-medium">
-                        {doc.category}
-                      </span>
+          <TabsContent value="all" className="mt-0">
+            <DocumentsTable documents={documents} loading={loading} onApprove={handleApprove} onReject={handleReject} isPendingTab={false} />
+          </TabsContent>
+          <TabsContent value="pending" className="mt-0">
+            <DocumentsTable documents={documents} loading={loading} onApprove={handleApprove} onReject={handleReject} isPendingTab={true} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
+}
+
+function DocumentsTable({ documents, loading, onApprove, onReject, isPendingTab }: {
+  documents: Document[],
+  loading: boolean,
+  onApprove: (id: string) => void,
+  onReject: (id: string) => void,
+  isPendingTab: boolean
+}) {
+  return (
+    <div className="rounded-xl border border-border/50 overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead>Title</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Submitted By</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center">
+                Loading...
+              </TableCell>
+            </TableRow>
+          ) : documents.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center">
+                No documents found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            documents.map((doc) => (
+              <TableRow key={doc.id} className="hover:bg-muted/30">
+                <TableCell className="font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  {doc.title}
+                </TableCell>
+                <TableCell>{doc.type}</TableCell>
+                <TableCell>{doc.submittedBy}</TableCell>
+                <TableCell>
+                  {doc.status === 'APPROVED' && <span className="flex items-center gap-1 text-green-600 bg-green-100 px-2 py-1 rounded text-xs rounded-full w-fit"><CheckCircle className="w-3 h-3" /> Approved</span>}
+                  {doc.status === 'REJECTED' && <span className="flex items-center gap-1 text-red-600 bg-red-100 px-2 py-1 rounded text-xs rounded-full w-fit"><XCircle className="w-3 h-3" /> Rejected</span>}
+                  {doc.status === 'PENDING' && <span className="flex items-center gap-1 text-yellow-600 bg-yellow-100 px-2 py-1 rounded text-xs rounded-full w-fit"><Clock className="w-3 h-3" /> Pending</span>}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-xs">
+                  {new Date(doc.submittedAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell className="text-right">
+                  {(doc.status === 'PENDING' || isPendingTab) && (
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100" onClick={() => onApprove(doc.id)}>
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100" onClick={() => onReject(doc.id)}>
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => playSound("click")}
-                    className="p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-                    title="View"
-                  >
-                    <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => playSound("click")}
-                    className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
-                    title="Download"
-                  >
-                    <Download className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => playSound("click")}
-                    className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

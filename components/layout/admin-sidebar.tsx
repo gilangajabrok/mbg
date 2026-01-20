@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -12,7 +12,7 @@ import {
   UserCog,
   Calendar,
   ClipboardCheck,
-  Truck,
+
   DollarSign,
   FileText,
   BarChart3,
@@ -20,21 +20,32 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Shield,
+  Building2,
+  GraduationCap,
+  ShoppingBag,
+  Megaphone
 } from "lucide-react"
 import { useSound } from "@/lib/sound-provider"
 
 const adminMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: School, label: "Schools", href: "/admin/schools" },
+  { icon: GraduationCap, label: "Students", href: "/admin/students" },
+  { icon: Calendar, label: "Meal Plans", href: "/admin/meal-plans" },
+  { icon: ShoppingBag, label: "Orders", href: "/admin/orders" },
   { icon: Package, label: "Distribution", href: "/admin/distribution" },
   { icon: Users, label: "Suppliers", href: "/admin/suppliers" },
   { icon: UserCog, label: "Parents", href: "/admin/parents" },
+  { icon: Megaphone, label: "Announcements", href: "/admin/announcements" },
   { icon: Calendar, label: "Meal Plans", href: "/admin/meals" },
   { icon: ClipboardCheck, label: "Quality Control", href: "/admin/quality" },
-  { icon: Truck, label: "Delivery", href: "/admin/delivery" },
+
   { icon: DollarSign, label: "Financial", href: "/admin/finance" },
   { icon: FileText, label: "Documents", href: "/admin/documents" },
   { icon: BarChart3, label: "Reports", href: "/admin/reports" },
+  { icon: Shield, label: "Great System", href: "/great/dashboard" },
+  { icon: Building2, label: "Organization", href: "/admin/organization-settings" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
 
@@ -42,6 +53,27 @@ export default function AdminSidebar() {
   const pathname = usePathname()
   const { playSound } = useSound()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Basic decode to check role (in production use proper jwt library or context)
+    const token = localStorage.getItem("accessToken")
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]))
+        setUserRole(payload.role)
+      } catch (e) {
+        console.error("Failed to decode token", e)
+      }
+    }
+  }, [])
+
+  const filteredMenuItems = adminMenuItems.filter(item => {
+    if (item.label === "Great System") {
+      return userRole === "GREAT_ADMIN"
+    }
+    return true
+  })
 
   const handleLogout = () => {
     playSound("click")
@@ -95,7 +127,7 @@ export default function AdminSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
-        {adminMenuItems.map((item, index) => {
+        {filteredMenuItems.map((item, index) => {
           const isActive = pathname === item.href
           const Icon = item.icon
 
@@ -106,14 +138,13 @@ export default function AdminSidebar() {
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Link href={item.href} onClick={() => playSound("navigation")}>
+              <Link href={item.href} onClick={() => playSound("click")}>
                 <motion.div
                   whileHover={{ x: 4 }}
                   className={`flex items-center gap-2 px-3 py-3 rounded-xl transition-all cursor-pointer
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    ${isActive
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                     }
                   `}
                 >
